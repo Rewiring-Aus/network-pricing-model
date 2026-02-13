@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who pays for the grid?</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body style="margin:0;background:#fff">
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useMemo, useCallback } = React;
+
+const DP = {
+  pool: 950, numHH: 10.8, avgProp: 1.05, solarReduction: 55,
+  batteryReduction: 88, renterFixedShare: 15, dynBatteryCredit: 30,
+  neutralThreshold: 5,
+  retailFixed: 150, wholesalePerKwh: 770, envPerKwh: 155, retailVarPerKwh: 175,
+  avgUsage: 5500,
+};
+
+const DHH = [
+  { id: "young-renter", name: "Young renter", desc: "Single, low income, low wealth, small apartment", income: 28, wealth: 35, owner: false, propVal: 0, usage: 3200, solar: false, battery: false, icon: "\u{1F3E2}", popNow: 12, pop31: 12 },
+  { id: "family-renter", name: "Working family (renter)", desc: "Couple + kids, medium income, low wealth", income: 85, wealth: 60, owner: false, propVal: 0, usage: 6500, solar: false, battery: false, icon: "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}", popNow: 14, pop31: 13 },
+  { id: "first-home", name: "First home buyer", desc: "Couple, medium income, growing equity", income: 110, wealth: 280, owner: true, propVal: 750, usage: 5800, solar: false, battery: false, icon: "\u{1F3E0}", popNow: 10, pop31: 8 },
+  { id: "est-nosolar", name: "Established family", desc: "No solar, medium-high income, owns home", income: 140, wealth: 950, owner: true, propVal: 1200, usage: 7200, solar: false, battery: false, icon: "\u{1F3E1}", popNow: 18, pop31: 10 },
+  { id: "est-solar", name: "Family with solar", desc: "Solar only, medium-high income, owns home", income: 135, wealth: 1050, owner: true, propVal: 1300, usage: 7200, solar: true, battery: false, icon: "\u2600\uFE0F", popNow: 15, pop31: 18 },
+  { id: "wealthy-bat", name: "Wealthy + solar/battery", desc: "High income & wealth, full CER setup", income: 220, wealth: 2800, owner: true, propVal: 2200, usage: 9000, solar: true, battery: true, icon: "\u{1F50B}", popNow: 4, pop31: 9 },
+  { id: "ret-frugal", name: "Retiree (frugal)", desc: "Low income, high wealth, modest usage, no CER", income: 32, wealth: 1800, owner: true, propVal: 1500, usage: 3800, solar: false, battery: false, icon: "\u{1F9D3}", popNow: 10, pop31: 6 },
+  { id: "ret-cer", name: "Retiree (solar/battery)", desc: "Low income, high wealth, solar + battery", income: 35, wealth: 2100, owner: true, propVal: 1700, usage: 5000, solar: true, battery: true, icon: "\u26A1", popNow: 5, pop31: 12 },
+  { id: "social", name: "Social housing", desc: "Very low income & wealth, vulnerable", income: 22, wealth: 8, owner: false, propVal: 0, usage: 4200, solar: false, battery: false, icon: "\u{1F3D8}\uFE0F", popNow: 12, pop31: 12 },
+];
+
+function Slider({ label, help, value, onChange, min, max, step, unit }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
+        <label style={{ fontSize: 12, fontWeight: 500, color: "#334155" }}>{label}</label>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>
+          {typeof value === "number" ? value.toLocaleString() : value}{unit || ""}
+        </span>
+      </div>
+      {help && <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 3, lineHeight: 1.3 }}>{help}</div>}
+      <input type="range" min={min} max={max} step={step || 1} value={value}
+        onChange={e => onChange(parseFloat(e.target.value))} style={{ width: "100%" }} />
+    </div>
+  );
+}
+
+function Section({ title, children, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen || false);
+  return (
+    <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 10, marginTop: 10 }}>
+      <div onClick={() => setOpen(!open)}
+        style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{title}</span>
+        <span style={{ fontSize: 11, color: "#94a3b8" }}>{open ? "\u25BC" : "\u25B6"}</span>
+      </div>
+      {open && <div style={{ marginTop: 8 }}>{children}</div>}
+    </div>
+  );
+}
+
+function Lever({ label, value, unit, help, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ flex: 1, minWidth: 160 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{label}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{value}{unit}</span>
+      </div>
+      {children}
+      <div onClick={() => setOpen(!open)} style={{ cursor: "pointer", fontSize: 10, color: "#3b82f6", marginTop: 3, userSelect: "none" }}>
+        {open ? "Hide detail \u25B2" : "Why? \u25BC"}
+      </div>
+      {open && <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.4, marginTop: 4 }}>{help}</div>}
+    </div>
+  );
+}
+
+function App() {
+  const [P, setP] = useState(DP);
+  const [hh, setHH] = useState(DHH);
+  const [era, setEra] = useState("now");
+  const [fp, setFp] = useState(30);
+  const [dp, setDp] = useState(0);
+  const [propScale, setPropScale] = useState(0);
+  const [fullBill, setFullBill] = useState(true);
+  const [exp, setExp] = useState(null);
+  const [showAss, setShowAss] = useState(false);
+
+  const setParam = useCallback((k, v) => setP(p => ({ ...p, [k]: v })), []);
+  const setHHF = useCallback((i, k, v) => setHH(o => o.map((h, j) => j === i ? { ...h, [k]: v } : h)), []);
+
+  const pool = P.pool;
+  const avgProp = P.avgProp * 1e6;
+  const pk = era === "now" ? "popNow" : "pop31";
+
+  const gridUsage = useCallback((h) => {
+    if (h.battery) return h.usage * (1 - P.batteryReduction / 100);
+    if (h.solar) return h.usage * (1 - P.solarReduction / 100);
+    return h.usage;
+  }, [P.solarReduction, P.batteryReduction]);
+
+  const nonNetworkCosts = useCallback((h) => {
+    const g = gridUsage(h);
+    const ratio = g / P.avgUsage;
+    const wh = P.wholesalePerKwh * ratio;
+    const env = P.envPerKwh * ratio;
+    const rv = P.retailVarPerKwh * ratio;
+    return { fixed: P.retailFixed, wholesale: wh, env, retailVar: rv, total: P.retailFixed + wh + env + rv };
+  }, [gridUsage, P.retailFixed, P.wholesalePerKwh, P.envPerKwh, P.retailVarPerKwh, P.avgUsage]);
+
+  const wAvgGrid = useCallback((popKey) => {
+    let tp = 0, tg = 0;
+    for (const h of hh) { tp += h[popKey]; tg += h[popKey] * gridUsage(h); }
+    return tg / tp;
+  }, [hh, gridUsage]);
+
+  const ag = wAvgGrid(pk);
+  const agNow = wAvgGrid("popNow");
+
+  const calcBill = useCallback((h, s) => {
+    const g = gridUsage(h);
+    const fPool = pool * (s.fp / 100);
+    const dPool = pool * (s.dp / 100);
+    const vPool = pool - fPool - dPool;
+    const ps = s.propScale / 100;
+    const flatF = fPool;
+    const scaledF = h.owner ? fPool * ((h.propVal * 1000) / avgProp) : fPool * (P.renterFixedShare / 100);
+    const f = flatF * (1 - ps) + scaledF * ps;
+    const v = vPool * (g / s.ag);
+    let d = 0;
+    if (dPool > 0) {
+      if (h.battery) d = dPool * -(P.dynBatteryCredit / 100);
+      else d = dPool * (g / s.ag);
+    }
+    return { f, v, d, t: f + v + d };
+  }, [pool, avgProp, gridUsage, P.renterFixedShare, P.dynBatteryCredit]);
+
+  const baseline = { fp: 30, dp: 0, propScale: 0, ag: agNow };
+  const current = { fp, dp, propScale, ag };
+
+  const isBaseline = fp === 30 && dp === 0 && propScale === 0 && era === "now";
+  const is31 = era === "2031";
+  const ratePctInc = Math.round((agNow / wAvgGrid("pop31") - 1) * 100);
+  const totalPool = pool * P.numHH * 1e6;
+  const varShare = Math.max(100 - fp - dp, 0);
+
+  const rows = useMemo(() => {
+    return hh.map(h => {
+      const b = calcBill(h, baseline);
+      const n = calcBill(h, current);
+      const nn = nonNetworkCosts(h);
+      const bFull = b.t + nn.total;
+      const nFull = n.t + nn.total;
+      const ch = n.t - b.t;
+      const chFull = nFull - bFull;
+      const cp = b.t !== 0 ? (ch / b.t) * 100 : 0;
+      const cpFull = bFull !== 0 ? (chFull / bFull) * 100 : 0;
+      return { ...h, b, n, nn, bFull, nFull, ch, chFull, cp, cpFull, pop: h[pk] };
+    });
+  }, [hh, calcBill, nonNetworkCosts, baseline, current, pk]);
+
+  const maxBill = Math.max(...rows.map(r => fullBill ? Math.max(r.bFull, r.nFull) : Math.max(r.b.t, r.n.t)));
+  const isNeutral = (ch) => Math.abs(ch) < pool * (P.neutralThreshold / 100);
+  const colFn = (ch) => isNeutral(ch) ? "#64748b" : ch < 0 ? "#16a34a" : "#dc2626";
+  const pfxFn = (ch) => isNeutral(ch) ? "" : ch < 0 ? "\u2212" : "+";
+
+  const getBillT = (r, which) => fullBill ? (which === "b" ? r.bFull : r.nFull) : (which === "b" ? r.b.t : r.n.t);
+  const getCh = (r) => fullBill ? r.chFull : r.ch;
+  const getCp = (r) => fullBill ? r.cpFull : r.cp;
+
+  return (
+    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", maxWidth: 860, margin: "0 auto", padding: "20px 16px", color: "#1e293b" }}>
+      <div style={{ marginBottom: 16 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>Who pays for the grid?</h1>
+        <p style={{ fontSize: 13, color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+          Every household shares the cost of Australia's electricity network {"\u2014"} the poles, wires, and substations that connect us all.
+          That bill is <strong>${(totalPool / 1e9).toFixed(1)} billion a year</strong> split across <strong>{P.numHH.toFixed(1)}M households</strong>, averaging <strong>${pool.toLocaleString()}/yr</strong> each.
+          The total doesn't change. The only question is: <em>how should we divide it up?</em>
+        </p>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, alignItems: "center" }}>
+        <button onClick={() => setEra("now")}
+          style={{ padding: "7px 14px", borderRadius: 8, border: "2px solid", borderColor: era === "now" ? "#3b82f6" : "#e2e8f0", background: era === "now" ? "#eff6ff" : "#fff", fontWeight: era === "now" ? 600 : 400, fontSize: 13, cursor: "pointer", color: "#1e293b" }}>
+          Today's mix
+        </button>
+        <button onClick={() => setEra("2031")}
+          style={{ padding: "7px 14px", borderRadius: 8, border: "2px solid", borderColor: era === "2031" ? "#f59e0b" : "#e2e8f0", background: era === "2031" ? "#fffbeb" : "#fff", fontWeight: era === "2031" ? 600 : 400, fontSize: 13, cursor: "pointer", color: "#1e293b" }}>
+          {"\u26A0\uFE0F"} 2031 {"\u2014"} more batteries
+        </button>
+        <div style={{ marginLeft: "auto", display: "flex", borderRadius: 8, overflow: "hidden", border: "2px solid #e2e8f0" }}>
+          <button onClick={() => setFullBill(false)}
+            style={{ padding: "6px 12px", border: "none", background: !fullBill ? "#3b82f6" : "#fff", color: !fullBill ? "#fff" : "#64748b", fontWeight: !fullBill ? 600 : 400, fontSize: 12, cursor: "pointer" }}>
+            Grid costs only
+          </button>
+          <button onClick={() => setFullBill(true)}
+            style={{ padding: "6px 12px", border: "none", borderLeft: "1px solid #e2e8f0", background: fullBill ? "#3b82f6" : "#fff", color: fullBill ? "#fff" : "#64748b", fontWeight: fullBill ? 600 : 400, fontSize: 12, cursor: "pointer" }}>
+            Full power bill
+          </button>
+        </div>
+      </div>
+
+      {is31 && (
+        <div style={{ marginBottom: 12, padding: "8px 12px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a", fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
+          By 2031, ~1.5M more households will have batteries. The per-kWh rate must rise ~{ratePctInc}% to collect the same ${(totalPool / 1e9).toFixed(1)}B. Battery homes barely notice. Everyone else absorbs the shortfall.
+        </div>
+      )}
+
+      {fullBill && (
+        <div style={{ marginBottom: 12, padding: "8px 12px", background: "#f5f3ff", borderRadius: 8, border: "1px solid #ddd6fe", fontSize: 11, color: "#6d28d9", lineHeight: 1.5 }}>
+          <strong>Full bill view:</strong> The grey portion of each bar shows non-network costs (wholesale, environmental, retail) which are the same across all scenarios and scale with grid usage. Only the network portion {"\u2014"} shown in colour {"\u2014"} changes when you adjust the levers.
+        </div>
+      )}
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+          {[
+            { label: "Current pricing (30% Fixed Costs)", fp: 30, dp: 0, ps: 0, col: "#3b82f6", bg: "#eff6ff", border: "#e2e8f0" },
+            { label: "Increase to 65% Fixed Costs", fp: 65, dp: 0, ps: 0, col: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
+            { label: "Rewiring\u2019s Proposal (50% Fixed Costs, 25% Dynamic Costs, Property Scaling)", fp: 50, dp: 25, ps: 100, col: "#16a34a", bg: "#f0fdf4", border: "#86efac", icon: "\u{1F50B}" },
+          ].map(s => {
+            const active = fp === s.fp && dp === s.dp && propScale === s.ps;
+            return (
+              <button key={s.label} onClick={() => { setFp(s.fp); setDp(s.dp); setPropScale(s.ps); }}
+                style={{ padding: "6px 12px", borderRadius: 8, border: "2px solid", borderColor: active ? s.col : s.border, background: active ? s.bg : "#fff", fontWeight: active ? 600 : 400, fontSize: 12, cursor: "pointer", color: active ? s.col : "#1e293b" }}>
+                {s.icon ? s.icon + " " : ""}{s.label}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", padding: 14 }}>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <Lever label="Fixed" value={fp} unit="%" help={"Currently ~30% of network revenue comes from a flat daily charge that\u2019s the same for every household. The AEMC wants to push this to ~65%+. A higher fixed share means everyone pays the same regardless of how much grid power they use \u2014 great for heavy users, bad for low-usage and solar households."}>
+              <input type="range" min={0} max={80} step={1} value={fp} onChange={e => setFp(+e.target.value)} style={{ width: "100%" }} />
+            </Lever>
+            <Lever label="Dynamic" value={dp} unit="%" help={"This slice of the bill rewards battery owners who help reduce peak demand (through VPPs or market-exposed plans). Battery households earn a credit; everyone else pays based on their grid draw. Without it, there\u2019s no financial incentive for the flexibility batteries can provide."}>
+              <input type="range" min={0} max={40} step={1} value={dp} onChange={e => setDp(+e.target.value)} style={{ width: "100%" }} />
+            </Lever>
+            <Lever label="Property scaling" value={propScale} unit="%" help={"Instead of a flat daily charge, scale it by property value \u2014 like council rates. At 0% everyone pays the same. At 100% your share is proportional to your home\u2019s value (vs the $" + P.avgProp.toFixed(2) + "M average). Expensive homes pay more; renters pay a reduced share (" + P.renterFixedShare + "%). This links what you pay to your capacity to pay."}>
+              <input type="range" min={0} max={100} step={5} value={propScale} onChange={e => setPropScale(+e.target.value)} style={{ width: "100%" }} />
+            </Lever>
+          </div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 8, textAlign: "center" }}>
+            Usage-based: {varShare}%{dp > 0 ? " \u00B7 Dynamic rewards batteries for cutting peaks" : ""}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>
+          {isBaseline ? ("What each household type pays today" + (fullBill ? "" : " (network only)")) : ("How bills change" + (fullBill ? " (full bill)" : " (network only)"))}
+        </h2>
+        {!isBaseline && <span style={{ fontSize: 11, color: "#94a3b8" }}>Bar thickness = population share</span>}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {rows.map(r => {
+          const open = exp === r.id;
+          const barH = Math.max(6, Math.round(r.pop / 18 * 28));
+          const ch = getCh(r);
+          const cp = getCp(r);
+          const c = colFn(ch);
+          const neutral = isNeutral(ch);
+          const bT = getBillT(r, "b");
+          const nT = getBillT(r, "n");
+          return (
+            <div key={r.id}>
+              <div onClick={() => setExp(open ? null : r.id)} style={{ cursor: "pointer", padding: "10px 12px", borderRadius: 10, background: open ? "#f8fafc" : "transparent", border: "1px solid", borderColor: open ? "#e2e8f0" : "transparent" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 20, width: 28, textAlign: "center", flexShrink: 0 }}>{r.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                      {r.name} <span style={{ fontWeight: 400, fontSize: 11, color: "#94a3b8" }}>{r.desc}</span>
+                      {is31 && r.pop !== r.popNow && <span style={{ fontSize: 10, fontWeight: 400, color: r.pop > r.popNow ? "#16a34a" : "#dc2626", marginLeft: 6 }}>{r.popNow}% {"\u2192"} {r.pop}%</span>}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0, minWidth: 100 }}>
+                    {isBaseline ? (
+                      <div style={{ fontSize: 15, fontWeight: 700 }}>${Math.round(bT).toLocaleString()}<span style={{ fontSize: 11, fontWeight: 400, color: "#94a3b8" }}>/yr</span></div>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: c }}>{neutral ? "~$0" : pfxFn(ch) + "$" + Math.abs(Math.round(ch)).toLocaleString()}</div>
+                        <div style={{ fontSize: 11, color: c }}>{neutral ? "negligible" : (cp > 0.5 ? "+" : "") + Math.round(cp) + "%"}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {!isBaseline && (() => {
+                  const mxB = maxBill * 1.1;
+                  const bPos = Math.min(Math.max(bT / mxB * 100, 2), 95);
+                  const nPos = Math.min(Math.max(nT / mxB * 100, 0), 100);
+                  const left = Math.min(bPos, nPos);
+                  const right = Math.max(bPos, nPos);
+                  const tH = barH + 12;
+                  const nnPos = fullBill ? Math.min(r.nn.total / mxB * 100, 95) : 0;
+                  return (
+                    <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: tH }}>
+                      <div style={{ position: "absolute", left: 0, right: 0, top: 12, height: barH, background: "#f1f5f9", borderRadius: barH / 2 }} />
+                      {fullBill && nnPos > 0 && <div style={{ position: "absolute", left: 0, top: 12, height: barH, width: nnPos + "%", background: "#e2e8f0", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
+                      <div style={{ position: "absolute", left: bPos + "%", top: 0, height: tH, display: "flex", flexDirection: "column", alignItems: "center", transform: "translateX(-50%)", zIndex: 2 }}>
+                        <div style={{ fontSize: 9, color: "#64748b", fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>${Math.round(bT).toLocaleString()}</div>
+                        <div style={{ width: 2, flex: 1, background: "#64748b", borderRadius: 1, marginTop: 1 }} />
+                      </div>
+                      {!neutral && ch < 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #4ade80, #22c55e)", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
+                      {!neutral && ch > 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #f87171, #ef4444)", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />}
+                      <div style={{ position: "absolute", right: -38, top: 12, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#94a3b8" }}>{r.pop}%</div>
+                    </div>
+                  );
+                })()}
+
+                {isBaseline && (() => {
+                  if (fullBill) {
+                    const nwF = (r.b.f / maxBill) * 100;
+                    const nwT = (r.b.t / maxBill) * 100;
+                    const nnT = (r.bFull / maxBill) * 100;
+                    return (
+                      <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: barH }}>
+                        <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f1f5f9", borderRadius: barH / 2 }} />
+                        <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: nwF + "%", background: "#93c5fd", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
+                        <div style={{ position: "absolute", left: nwF + "%", top: 0, height: barH, width: (nwT - nwF) + "%", background: "#c4b5fd" }} />
+                        <div style={{ position: "absolute", left: nwT + "%", top: 0, height: barH, width: (nnT - nwT) + "%", background: "#e2e8f0", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
+                        <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#94a3b8" }}>{r.pop}%</div>
+                      </div>
+                    );
+                  }
+                  const fixedPct = (r.b.f / maxBill) * 100;
+                  const totalPct = (r.b.t / maxBill) * 100;
+                  return (
+                    <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: barH }}>
+                      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f1f5f9", borderRadius: barH / 2 }} />
+                      <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: fixedPct + "%", background: "#93c5fd", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
+                      <div style={{ position: "absolute", left: fixedPct + "%", top: 0, height: barH, width: (totalPct - fixedPct) + "%", background: "#c4b5fd", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
+                      <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#94a3b8" }}>{r.pop}%</div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {open && (
+                <div style={{ margin: "4px 0 8px 50px", padding: "12px 14px", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 10 }}>
+                    <div><span style={{ color: "#94a3b8" }}>Income:</span> <strong>${r.income}k</strong></div>
+                    <div><span style={{ color: "#94a3b8" }}>Wealth:</span> <strong>${r.wealth}k</strong></div>
+                    <div><span style={{ color: "#94a3b8" }}>Property:</span> <strong>{r.owner ? "$" + r.propVal + "k" : "Renter"}</strong></div>
+                    <div><span style={{ color: "#94a3b8" }}>Usage:</span> <strong>{r.usage.toLocaleString()} kWh/yr</strong></div>
+                    <div><span style={{ color: "#94a3b8" }}>Grid draw:</span> <strong>{Math.round(gridUsage(r)).toLocaleString()} kWh/yr</strong></div>
+                    <div><span style={{ color: "#94a3b8" }}>CER:</span> <strong>{r.battery ? "Solar+Battery" : r.solar ? "Solar only" : "None"}</strong></div>
+                  </div>
+                  <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 10 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      <div>
+                        <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>Today's baseline</div>
+                        <div><strong>${Math.round(r.b.t).toLocaleString()}/yr</strong> <span style={{ color: "#94a3b8" }}>network</span></div>
+                        <div style={{ color: "#94a3b8", fontSize: 11 }}>Fixed ${Math.round(r.b.f).toLocaleString()} {"\u00B7"} Usage ${Math.round(r.b.v).toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>Your scenario</div>
+                        <div><strong>${Math.round(r.n.t).toLocaleString()}/yr</strong> <span style={{ color: "#94a3b8" }}>network</span></div>
+                        <div style={{ color: "#94a3b8", fontSize: 11 }}>
+                          Fixed ${Math.round(r.n.f).toLocaleString()} {"\u00B7"} Usage ${Math.round(r.n.v).toLocaleString()}
+                          {r.n.d !== 0 && <span style={{ color: r.n.d < 0 ? "#16a34a" : undefined }}> {"\u00B7"} Dyn {r.n.d < 0 ? "\u2212" : "+"}${Math.abs(Math.round(r.n.d)).toLocaleString()}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    {fullBill && (
+                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>Non-network costs (same in both scenarios)</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4, fontSize: 11 }}>
+                          <div>Wholesale <strong>${Math.round(r.nn.wholesale).toLocaleString()}</strong></div>
+                          <div>Environmental <strong>${Math.round(r.nn.env).toLocaleString()}</strong></div>
+                          <div>Retail (var) <strong>${Math.round(r.nn.retailVar).toLocaleString()}</strong></div>
+                          <div>Retail (fixed) <strong>${Math.round(r.nn.fixed).toLocaleString()}</strong></div>
+                        </div>
+                        <div style={{ marginTop: 4, fontSize: 12 }}>
+                          <strong>Total bill: ${Math.round(r.bFull).toLocaleString()}</strong> baseline {"\u2192"} <strong>${Math.round(r.nFull).toLocaleString()}</strong> scenario
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {isBaseline && (
+        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#64748b", flexWrap: "wrap" }}>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#93c5fd", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network fixed (30%)</span>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#c4b5fd", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network usage (70%)</span>
+          {fullBill && <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#e2e8f0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail</span>}
+        </div>
+      )}
+      {!isBaseline && fullBill && (
+        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#64748b", flexWrap: "wrap" }}>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#e2e8f0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail (unchanged)</span>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#22c55e", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Saving</span>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#ef4444", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Increase</span>
+        </div>
+      )}
+
+      <div style={{ marginTop: 20, padding: "14px 16px", background: is31 && fp === 30 && dp === 0 && propScale === 0 ? "linear-gradient(135deg, #fef3c7, #fee2e2)" : "linear-gradient(135deg, #fef3c7, #fef9c3)", borderRadius: 10, border: "1px solid " + (is31 ? "#fca5a5" : "#fde68a") }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: "#92400e" }}>
+          {is31 && fp === 30 && dp === 0 && propScale === 0 ? "\u26A0\uFE0F The cost of doing nothing" : "Key takeaway"}
+        </div>
+        <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.5 }}>
+          {isBaseline
+            ? <span>Look at who pays what today. The <strong>Retiree with solar/battery</strong> pays just ${Math.round(fullBill ? rows.find(r => r.id === "ret-cer")?.bFull : rows.find(r => r.id === "ret-cer")?.b.t || 0).toLocaleString()}/yr{fullBill ? " total" : " toward the grid"} {"\u2014"} despite $2.1M in wealth. The <strong>Working family renting</strong> pays ${Math.round(fullBill ? rows.find(r => r.id === "family-renter")?.bFull : rows.find(r => r.id === "family-renter")?.b.t || 0).toLocaleString()}/yr with no way to bring that down.{fullBill ? " Toggle off \"full bill\" to focus on just the network portion that\u2019s up for debate." : " Try the levers above to explore fairer alternatives."}</span>
+            : is31 && fp === 30 && dp === 0 && propScale === 0
+            ? <span>Battery households barely notice the rate rise {"\u2014"} their grid draw is so tiny it adds just a few dollars. <strong>Renters, social housing, and families without solar absorb the entire ${(totalPool / 1e9).toFixed(1)}B shortfall.</strong> Every year of delay deepens this transfer from those with the least to those with the most.</span>
+            : propScale > 0 && dp > 0
+            ? <span>Combining property-scaled charges with dynamic pricing is more targeted {"\u2014"} wealthier homeowners pay more, renters are shielded, and batteries that genuinely cut peaks earn a reward. Compare the <strong>Retiree (solar/battery)</strong> and <strong>Social housing</strong> rows.</span>
+            : propScale > 0
+            ? <span>Property-value scaling links what you pay to what you can afford, like council rates. Wealthy homeowners pay more regardless of solar; renters and modest homes are shielded. But without dynamic pricing, there's still no reward for batteries cutting peaks.</span>
+            : fp > 50 && propScale === 0
+            ? <span>High flat fixed charges reduce bills for heavy grid users but raise them for low-usage homes. A wealthy retiree with solar/battery and a social housing tenant pay exactly the same fixed charge {"\u2014"} that's deeply regressive. Try adding property-value scaling to see the difference.</span>
+            : <span>Compare how each household type is affected. The pattern of winners and losers depends on the interaction between fixed charges, dynamic pricing, and property scaling. Click any row for the full bill breakdown.</span>
+          }
+        </div>
+      </div>
+
+      <button onClick={() => setShowAss(!showAss)}
+        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: showAss ? "#f1f5f9" : "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>{"\u2699\uFE0F"} Model assumptions & detailed parameters</span>
+        <span style={{ fontSize: 11, color: "#94a3b8" }}>{showAss ? "Hide \u25B2" : "Show \u25BC"}</span>
+      </button>
+
+      {showAss && (
+        <div style={{ padding: 16, background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12, lineHeight: 1.5 }}>
+            Every number in this model is adjustable. Change any value to see how it shifts the outcomes.{" "}
+            <button onClick={() => { setP(DP); setHH(DHH); }} style={{ fontSize: 11, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Reset all to defaults</button>
+          </div>
+          <Section title="Grid costs" defaultOpen={true}>
+            <Slider label="Average grid charge per household" help="AER 2025-26: ~$700 (Energex) to ~$1,043 (Endeavour). Includes transmission + distribution." value={P.pool} onChange={v => setParam("pool", v)} min={500} max={1500} step={10} unit="$/yr" />
+            <Slider label="Number of households" help="ABS estimate ~10.8M connected to the NEM." value={P.numHH} onChange={v => setParam("numHH", v)} min={8} max={14} step={0.1} unit="M" />
+          </Section>
+          <Section title="How much solar & batteries reduce grid use">
+            <Slider label="Solar grid reduction" help="Solar homes draw ~55% less from the grid." value={P.solarReduction} onChange={v => setParam("solarReduction", v)} min={20} max={80} step={1} unit="%" />
+            <Slider label="Solar + battery grid reduction" help="Batteries push this to ~88%." value={P.batteryReduction} onChange={v => setParam("batteryReduction", v)} min={50} max={98} step={1} unit="%" />
+          </Section>
+          <Section title="Property scaling settings">
+            <Slider label="Average dwelling value" help="ABS Sep 2025: national mean $1.05M." value={P.avgProp} onChange={v => setParam("avgProp", v)} min={0.5} max={2.5} step={0.05} unit="M" />
+            <Slider label="Renter fixed charge share" help="Under property scaling, renters pay this % of the fixed pool." value={P.renterFixedShare} onChange={v => setParam("renterFixedShare", v)} min={0} max={50} step={1} unit="%" />
+          </Section>
+          <Section title="Dynamic pricing settings">
+            <Slider label="Battery credit (% of dynamic pool)" help="How much flows back to battery owners as a peak-reduction reward." value={P.dynBatteryCredit} onChange={v => setParam("dynBatteryCredit", v)} min={0} max={80} step={5} unit="%" />
+            <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.4 }}>Everyone without a battery pays based on grid draw.</div>
+          </Section>
+          <Section title="Non-network bill components">
+            <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.4, marginBottom: 8 }}>
+              These costs are used in "full bill" view. They don't change between scenarios {"\u2014"} only network charges do. Wholesale, environmental, and variable retail scale with grid usage. Based on DMO 2025-26 data and ACCC cost stack analysis.
+            </div>
+            <Slider label="Wholesale (avg household)" help="~35% of the total bill. Fully volumetric — scales with grid draw." value={P.wholesalePerKwh} onChange={v => setParam("wholesalePerKwh", v)} min={400} max={1200} step={10} unit="$/yr" />
+            <Slider label="Environmental levies (avg)" help="~7% of bill. Volumetric — SRES, state schemes." value={P.envPerKwh} onChange={v => setParam("envPerKwh", v)} min={50} max={300} step={5} unit="$/yr" />
+            <Slider label="Retail variable (avg)" help="Retailer markup on usage. ~8% of bill." value={P.retailVarPerKwh} onChange={v => setParam("retailVarPerKwh", v)} min={50} max={400} step={5} unit="$/yr" />
+            <Slider label="Retail fixed (daily supply charge)" help="Retailer's fixed daily charge component. Same for all households." value={P.retailFixed} onChange={v => setParam("retailFixed", v)} min={50} max={400} step={5} unit="$/yr" />
+            <Slider label="Average household usage" help="Used as the reference point for scaling volumetric non-network costs." value={P.avgUsage} onChange={v => setParam("avgUsage", v)} min={3000} max={8000} step={100} unit=" kWh" />
+          </Section>
+          <Section title="Display settings">
+            <Slider label="Neutral threshold" help="Bill changes smaller than this % of the average are shown as negligible." value={P.neutralThreshold} onChange={v => setParam("neutralThreshold", v)} min={1} max={15} step={1} unit="%" />
+          </Section>
+          <Section title="Household types">
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8, lineHeight: 1.4 }}>
+              Population shares should sum to 100%. Usage is total consumption before solar/battery offsets.
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                    <th style={{ textAlign: "left", padding: "4px 6px", color: "#64748b", fontWeight: 600 }}>Type</th>
+                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>kWh</th>
+                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Prop $k</th>
+                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Now%</th>
+                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>2031%</th>
+                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Sol</th>
+                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Bat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hh.map((h, i) => (
+                    <tr key={h.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "4px 6px", fontWeight: 500 }}>{h.icon} {h.name}</td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.usage} onChange={e => setHHF(i, "usage", +e.target.value)} style={{ width: 52, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.propVal} onChange={e => setHHF(i, "propVal", +e.target.value)} style={{ width: 52, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.popNow} onChange={e => setHHF(i, "popNow", +e.target.value)} style={{ width: 38, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.pop31} onChange={e => setHHF(i, "pop31", +e.target.value)} style={{ width: 38, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 4px", textAlign: "center" }}><input type="checkbox" checked={h.solar} onChange={e => setHHF(i, "solar", e.target.checked)} /></td>
+                      <td style={{ padding: "2px 4px", textAlign: "center" }}><input type="checkbox" checked={h.battery} onChange={e => setHHF(i, "battery", e.target.checked)} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ borderTop: "2px solid #e2e8f0" }}>
+                    <td style={{ padding: "4px 6px", fontWeight: 600, fontSize: 11 }}>Totals</td>
+                    <td></td><td></td>
+                    <td style={{ padding: "4px 4px", fontWeight: 700, fontSize: 11, textAlign: "right", color: hh.reduce((s, h) => s + h.popNow, 0) === 100 ? "#16a34a" : "#dc2626" }}>
+                      {hh.reduce((s, h) => s + h.popNow, 0)}%
+                    </td>
+                    <td style={{ padding: "4px 4px", fontWeight: 700, fontSize: 11, textAlign: "right", color: hh.reduce((s, h) => s + h.pop31, 0) === 100 ? "#16a34a" : "#dc2626" }}>
+                      {hh.reduce((s, h) => s + h.pop31, 0)}%
+                    </td>
+                    <td></td><td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
