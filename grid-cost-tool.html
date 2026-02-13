@@ -519,14 +519,18 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-  <script>
-function postHeight() {
-  var h = document.documentElement.scrollHeight;
+
+  function postHeight() {
+  // Reset to 0 so scrollHeight reflects actual content, not previous max
+  document.documentElement.style.height = 'auto';
+  document.body.style.height = 'auto';
+  var h = document.body.scrollHeight;
   window.parent.postMessage({ iframeHeight: h }, '*');
 }
 window.addEventListener('load', postHeight);
-new ResizeObserver(postHeight).observe(document.body);
+new MutationObserver(postHeight).observe(document.body, {
+  childList: true, subtree: true, attributes: true
+});
 </script>
 </body>
 </html>
