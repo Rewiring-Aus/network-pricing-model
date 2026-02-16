@@ -244,6 +244,10 @@ function App() {
             <div style={{ fontSize: 11, color: "#667085", marginTop: 10, textAlign: "center" }}>
               Usage-based: {varShare}%{dp > 0 ? " \u00B7 Dynamic rewards batteries for cutting peaks" : ""}
             </div>
+            {!isBaseline && <button onClick={() => { setFp(30); setDp(0); setPropScale(0); }}
+              style={{ width: "100%", marginTop: 10, padding: "6px 0", borderRadius: 8, border: "1px solid #eaecf0", background: "#fff", fontSize: 11, color: "#667085", cursor: "pointer" }}>
+              Reset to current pricing
+            </button>}
           </div>
         </div>
 
