@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Who pays for the grid?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -37,12 +40,12 @@ function Slider({ label, help, value, onChange, min, max, step, unit }) {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
-        <label style={{ fontSize: 12, fontWeight: 500, color: "#334155" }}>{label}</label>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>
+        <label style={{ fontSize: 12, fontWeight: 500, color: "#344054" }}>{label}</label>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#101828" }}>
           {typeof value === "number" ? value.toLocaleString() : value}{unit || ""}
         </span>
       </div>
-      {help && <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 3, lineHeight: 1.3 }}>{help}</div>}
+      {help && <div style={{ fontSize: 10, color: "#98a2b3", marginBottom: 3, lineHeight: 1.3 }}>{help}</div>}
       <input type="range" min={min} max={max} step={step || 1} value={value}
         onChange={e => onChange(parseFloat(e.target.value))} style={{ width: "100%" }} />
     </div>
@@ -52,11 +55,11 @@ function Slider({ label, help, value, onChange, min, max, step, unit }) {
 function Section({ title, children, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen || false);
   return (
-    <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 10, marginTop: 10 }}>
+    <div style={{ borderTop: "1px solid #eaecf0", paddingTop: 10, marginTop: 10 }}>
       <div onClick={() => setOpen(!open)}
         style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{title}</span>
-        <span style={{ fontSize: 11, color: "#94a3b8" }}>{open ? "\u25BC" : "\u25B6"}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "#344054" }}>{title}</span>
+        <span style={{ fontSize: 11, color: "#98a2b3" }}>{open ? "\u25BC" : "\u25B6"}</span>
       </div>
       {open && <div style={{ marginTop: 8 }}>{children}</div>}
     </div>
@@ -68,14 +71,14 @@ function Lever({ label, value, unit, help, children }) {
   return (
     <div style={{ flex: 1, minWidth: 160 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{label}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{value}{unit}</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "#344054" }}>{label}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#101828" }}>{value}{unit}</span>
       </div>
       {children}
-      <div onClick={() => setOpen(!open)} style={{ cursor: "pointer", fontSize: 10, color: "#3b82f6", marginTop: 3, userSelect: "none" }}>
+      <div onClick={() => setOpen(!open)} style={{ cursor: "pointer", fontSize: 10, color: "#4a00c3", marginTop: 3, userSelect: "none" }}>
         {open ? "Hide detail \u25B2" : "Why? \u25BC"}
       </div>
-      {open && <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.4, marginTop: 4 }}>{help}</div>}
+      {open && <div style={{ fontSize: 10, color: "#667085", lineHeight: 1.4, marginTop: 4 }}>{help}</div>}
     </div>
   );
 }
@@ -166,7 +169,7 @@ function App() {
 
   const maxBill = Math.max(...rows.map(r => fullBill ? Math.max(r.bFull, r.nFull) : Math.max(r.b.t, r.n.t)));
   const isNeutral = (ch) => Math.abs(ch) < pool * (P.neutralThreshold / 100);
-  const colFn = (ch) => isNeutral(ch) ? "#64748b" : ch < 0 ? "#16a34a" : "#dc2626";
+  const colFn = (ch) => isNeutral(ch) ? "#667085" : ch < 0 ? "#2ea871" : "#ff6464";
   const pfxFn = (ch) => isNeutral(ch) ? "" : ch < 0 ? "\u2212" : "+";
 
   const getBillT = (r, which) => fullBill ? (which === "b" ? r.bFull : r.nFull) : (which === "b" ? r.b.t : r.n.t);
@@ -174,15 +177,16 @@ function App() {
   const getCp = (r) => fullBill ? r.cpFull : r.cp;
 
   return (
-    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", maxWidth: 860, margin: "0 auto", padding: "20px 16px", color: "#1e293b" }}>
+    <div style={{ fontFamily: "'PT Sans', sans-serif", maxWidth: 860, margin: "0 auto", padding: "20px 16px", color: "#101828" }}>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>Who pays for the grid?</h1>
-        <p style={{ fontSize: 13, color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px", fontFamily: "'Roboto', sans-serif" }}>Who pays for the grid?</h1>
+        <p style={{ fontSize: 13, color: "#667085", margin: 0, lineHeight: 1.5 }}>
           Every household shares the cost of Australia's electricity network {"\u2014"} the poles, wires, and substations that connect us all.
           That bill is <strong>${(totalPool / 1e9).toFixed(1)} billion a year</strong> split across <strong>{P.numHH.toFixed(1)}M households</strong>, averaging <strong>${pool.toLocaleString()}/yr</strong> each.
-          The total doesn't change. The only question is: <em>how should we divide it up?</em>
+          The total doesn't change in this model, but the choices and incentives here do affect the long run cost of the grid. The key question this model considers is: <em>how should we divide it up?</em>
         </p>
-        <p style={{ fontSize: 13, color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+        <p></p>
+        <p style={{ fontSize: 13, color: "#667085", margin: 0, lineHeight: 1.5 }}>
           <em>Important note:</em> This model has been built for illustrative purposes only to support discussion around the AEMC's Pricing Review consultation process. The figures, population distributions and savings displayed
           are for illustrative purposes and include multiple assumptions that may be changed based on additional data updates. We encourage discussion and refinement of this tool - contact us at electrify@rewiringaustralia.org.
         </p>
@@ -190,33 +194,33 @@ function App() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, alignItems: "center" }}>
         <button onClick={() => setEra("now")}
-          style={{ padding: "7px 14px", borderRadius: 8, border: "2px solid", borderColor: era === "now" ? "#3b82f6" : "#e2e8f0", background: era === "now" ? "#eff6ff" : "#fff", fontWeight: era === "now" ? 600 : 400, fontSize: 13, cursor: "pointer", color: "#1e293b" }}>
+          style={{ padding: "7px 14px", borderRadius: 8, border: "2px solid", borderColor: era === "now" ? "#4a00c3" : "#eaecf0", background: era === "now" ? "#f3ecff" : "#fff", fontWeight: era === "now" ? 600 : 400, fontSize: 13, cursor: "pointer", color: "#101828" }}>
           Today's mix
         </button>
         <button onClick={() => setEra("2031")}
-          style={{ padding: "7px 14px", borderRadius: 8, border: "2px solid", borderColor: era === "2031" ? "#f59e0b" : "#e2e8f0", background: era === "2031" ? "#fffbeb" : "#fff", fontWeight: era === "2031" ? 600 : 400, fontSize: 13, cursor: "pointer", color: "#1e293b" }}>
+          style={{ padding: "7px 14px", borderRadius: 8, border: "2px solid", borderColor: era === "2031" ? "#f0cf61" : "#eaecf0", background: era === "2031" ? "#fffbe7" : "#fff", fontWeight: era === "2031" ? 600 : 400, fontSize: 13, cursor: "pointer", color: "#101828" }}>
           {"\u26A0\uFE0F"} 2031 {"\u2014"} more batteries
         </button>
-        <div style={{ marginLeft: "auto", display: "flex", borderRadius: 8, overflow: "hidden", border: "2px solid #e2e8f0" }}>
+        <div style={{ marginLeft: "auto", display: "flex", borderRadius: 8, overflow: "hidden", border: "2px solid #eaecf0" }}>
           <button onClick={() => setFullBill(false)}
-            style={{ padding: "6px 12px", border: "none", background: !fullBill ? "#3b82f6" : "#fff", color: !fullBill ? "#fff" : "#64748b", fontWeight: !fullBill ? 600 : 400, fontSize: 12, cursor: "pointer" }}>
+            style={{ padding: "6px 12px", border: "none", background: !fullBill ? "#4a00c3" : "#fff", color: !fullBill ? "#fff" : "#667085", fontWeight: !fullBill ? 600 : 400, fontSize: 12, cursor: "pointer" }}>
             Grid costs only
           </button>
           <button onClick={() => setFullBill(true)}
-            style={{ padding: "6px 12px", border: "none", borderLeft: "1px solid #e2e8f0", background: fullBill ? "#3b82f6" : "#fff", color: fullBill ? "#fff" : "#64748b", fontWeight: fullBill ? 600 : 400, fontSize: 12, cursor: "pointer" }}>
+            style={{ padding: "6px 12px", border: "none", borderLeft: "1px solid #eaecf0", background: fullBill ? "#4a00c3" : "#fff", color: fullBill ? "#fff" : "#667085", fontWeight: fullBill ? 600 : 400, fontSize: 12, cursor: "pointer" }}>
             Full power bill
           </button>
         </div>
       </div>
 
       {is31 && (
-        <div style={{ marginBottom: 12, padding: "8px 12px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a", fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
+        <div style={{ marginBottom: 12, padding: "8px 12px", background: "#fffbe7", borderRadius: 8, border: "1px solid #fdefbd", fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
           By 2031, ~1.5M more households will have batteries. The per-kWh rate must rise ~{ratePctInc}% to collect the same ${(totalPool / 1e9).toFixed(1)}B. Battery homes barely notice. Everyone else absorbs the shortfall.
         </div>
       )}
 
       {fullBill && (
-        <div style={{ marginBottom: 12, padding: "8px 12px", background: "#f5f3ff", borderRadius: 8, border: "1px solid #ddd6fe", fontSize: 11, color: "#6d28d9", lineHeight: 1.5 }}>
+        <div style={{ marginBottom: 12, padding: "8px 12px", background: "#f3ecff", borderRadius: 8, border: "1px solid #d6bbfb", fontSize: 11, color: "#4a00c3", lineHeight: 1.5 }}>
           <strong>Full bill view:</strong> The grey portion of each bar shows non-network costs (wholesale, environmental, retail) which are the same across all scenarios and scale with grid usage. Only the network portion {"\u2014"} shown in colour {"\u2014"} changes when you adjust the levers.
         </div>
       )}
@@ -224,20 +228,20 @@ function App() {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
           {[
-            { label: "Current pricing (30% Fixed Costs)", fp: 30, dp: 0, ps: 0, col: "#3b82f6", bg: "#eff6ff", border: "#e2e8f0" },
-            { label: "Increase to 65% Fixed Costs", fp: 65, dp: 0, ps: 0, col: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
-            { label: "Rewiring\u2019s Proposal (50% Fixed Costs, 25% Dynamic Costs, Property Scaling)", fp: 50, dp: 25, ps: 100, col: "#16a34a", bg: "#f0fdf4", border: "#86efac", icon: "\u{1F50B}" },
+            { label: "Current pricing (30% Fixed Costs)", fp: 30, dp: 0, ps: 0, col: "#4a00c3", bg: "#f3ecff", border: "#eaecf0" },
+            { label: "Increase to 65% Fixed Costs", fp: 65, dp: 0, ps: 0, col: "#667085", bg: "#f9fafb", border: "#eaecf0" },
+            { label: "Rewiring\u2019s Proposal (50% Fixed Costs, 25% Dynamic Costs, Property Scaling)", fp: 50, dp: 25, ps: 100, col: "#2ea871", bg: "#ecfdf3", border: "#2ea871", icon: "\u{1F50B}" },
           ].map(s => {
             const active = fp === s.fp && dp === s.dp && propScale === s.ps;
             return (
               <button key={s.label} onClick={() => { setFp(s.fp); setDp(s.dp); setPropScale(s.ps); }}
-                style={{ padding: "6px 12px", borderRadius: 8, border: "2px solid", borderColor: active ? s.col : s.border, background: active ? s.bg : "#fff", fontWeight: active ? 600 : 400, fontSize: 12, cursor: "pointer", color: active ? s.col : "#1e293b" }}>
+                style={{ padding: "6px 12px", borderRadius: 8, border: "2px solid", borderColor: active ? s.col : s.border, background: active ? s.bg : "#fff", fontWeight: active ? 600 : 400, fontSize: 12, cursor: "pointer", color: active ? s.col : "#101828" }}>
                 {s.icon ? s.icon + " " : ""}{s.label}
               </button>
             );
           })}
         </div>
-        <div style={{ background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", padding: 14 }}>
+        <div style={{ background: "#f9fafb", borderRadius: 12, border: "1px solid #eaecf0", padding: 14 }}>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             <Lever label="Fixed" value={fp} unit="%" help={"Currently ~30% of network revenue comes from a flat daily charge that\u2019s the same for every household. The AEMC wants to push this to ~65%+. A higher fixed share means everyone pays the same regardless of how much grid power they use \u2014 great for heavy users, bad for low-usage and solar households."}>
               <input type="range" min={0} max={80} step={1} value={fp} onChange={e => setFp(+e.target.value)} style={{ width: "100%" }} />
@@ -249,17 +253,17 @@ function App() {
               <input type="range" min={0} max={100} step={5} value={propScale} onChange={e => setPropScale(+e.target.value)} style={{ width: "100%" }} />
             </Lever>
           </div>
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 8, textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: "#667085", marginTop: 8, textAlign: "center" }}>
             Usage-based: {varShare}%{dp > 0 ? " \u00B7 Dynamic rewards batteries for cutting peaks" : ""}
           </div>
         </div>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, fontFamily: "'Roboto', sans-serif" }}>
           {isBaseline ? ("What each household type pays today" + (fullBill ? "" : " (network only)")) : ("How bills change" + (fullBill ? " (full bill)" : " (network only)"))}
         </h2>
-        {!isBaseline && <span style={{ fontSize: 11, color: "#94a3b8" }}>Bar thickness = population share</span>}
+        {!isBaseline && <span style={{ fontSize: 11, color: "#98a2b3" }}>Bar thickness = population share</span>}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -274,18 +278,18 @@ function App() {
           const nT = getBillT(r, "n");
           return (
             <div key={r.id}>
-              <div onClick={() => setExp(open ? null : r.id)} style={{ cursor: "pointer", padding: "10px 12px", borderRadius: 10, background: open ? "#f8fafc" : "transparent", border: "1px solid", borderColor: open ? "#e2e8f0" : "transparent" }}>
+              <div onClick={() => setExp(open ? null : r.id)} style={{ cursor: "pointer", padding: "10px 12px", borderRadius: 10, background: open ? "#f9fafb" : "transparent", border: "1px solid", borderColor: open ? "#eaecf0" : "transparent" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: 20, width: 28, textAlign: "center", flexShrink: 0 }}>{r.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>
-                      {r.name} <span style={{ fontWeight: 400, fontSize: 11, color: "#94a3b8" }}>{r.desc}</span>
-                      {is31 && r.pop !== r.popNow && <span style={{ fontSize: 10, fontWeight: 400, color: r.pop > r.popNow ? "#16a34a" : "#dc2626", marginLeft: 6 }}>{r.popNow}% {"\u2192"} {r.pop}%</span>}
+                      {r.name} <span style={{ fontWeight: 400, fontSize: 11, color: "#98a2b3" }}>{r.desc}</span>
+                      {is31 && r.pop !== r.popNow && <span style={{ fontSize: 10, fontWeight: 400, color: r.pop > r.popNow ? "#2ea871" : "#ff6464", marginLeft: 6 }}>{r.popNow}% {"\u2192"} {r.pop}%</span>}
                     </div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0, minWidth: 100 }}>
                     {isBaseline ? (
-                      <div style={{ fontSize: 15, fontWeight: 700 }}>${Math.round(bT).toLocaleString()}<span style={{ fontSize: 11, fontWeight: 400, color: "#94a3b8" }}>/yr</span></div>
+                      <div style={{ fontSize: 15, fontWeight: 700 }}>${Math.round(bT).toLocaleString()}<span style={{ fontSize: 11, fontWeight: 400, color: "#98a2b3" }}>/yr</span></div>
                     ) : (
                       <div>
                         <div style={{ fontSize: 15, fontWeight: 700, color: c }}>{neutral ? "~$0" : pfxFn(ch) + "$" + Math.abs(Math.round(ch)).toLocaleString()}</div>
@@ -305,15 +309,15 @@ function App() {
                   const nnPos = fullBill ? Math.min(r.nn.total / mxB * 100, 95) : 0;
                   return (
                     <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: tH }}>
-                      <div style={{ position: "absolute", left: 0, right: 0, top: 12, height: barH, background: "#f1f5f9", borderRadius: barH / 2 }} />
-                      {fullBill && nnPos > 0 && <div style={{ position: "absolute", left: 0, top: 12, height: barH, width: nnPos + "%", background: "#e2e8f0", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
+                      <div style={{ position: "absolute", left: 0, right: 0, top: 12, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
+                      {fullBill && nnPos > 0 && <div style={{ position: "absolute", left: 0, top: 12, height: barH, width: nnPos + "%", background: "#eaecf0", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
                       <div style={{ position: "absolute", left: bPos + "%", top: 0, height: tH, display: "flex", flexDirection: "column", alignItems: "center", transform: "translateX(-50%)", zIndex: 2 }}>
-                        <div style={{ fontSize: 9, color: "#64748b", fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>${Math.round(bT).toLocaleString()}</div>
-                        <div style={{ width: 2, flex: 1, background: "#64748b", borderRadius: 1, marginTop: 1 }} />
+                        <div style={{ fontSize: 9, color: "#667085", fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>${Math.round(bT).toLocaleString()}</div>
+                        <div style={{ width: 2, flex: 1, background: "#667085", borderRadius: 1, marginTop: 1 }} />
                       </div>
-                      {!neutral && ch < 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #4ade80, #22c55e)", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
-                      {!neutral && ch > 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #f87171, #ef4444)", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />}
-                      <div style={{ position: "absolute", right: -38, top: 12, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#94a3b8" }}>{r.pop}%</div>
+                      {!neutral && ch < 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #82ff7b, #2ea871)", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
+                      {!neutral && ch > 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #ffa3a3, #ff6464)", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />}
+                      <div style={{ position: "absolute", right: -38, top: 12, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
                     </div>
                   );
                 })()}
@@ -325,11 +329,11 @@ function App() {
                     const nnT = (r.bFull / maxBill) * 100;
                     return (
                       <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: barH }}>
-                        <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f1f5f9", borderRadius: barH / 2 }} />
-                        <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: nwF + "%", background: "#93c5fd", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
-                        <div style={{ position: "absolute", left: nwF + "%", top: 0, height: barH, width: (nwT - nwF) + "%", background: "#c4b5fd" }} />
-                        <div style={{ position: "absolute", left: nwT + "%", top: 0, height: barH, width: (nnT - nwT) + "%", background: "#e2e8f0", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
-                        <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#94a3b8" }}>{r.pop}%</div>
+                        <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
+                        <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: nwF + "%", background: "#d6bbfb", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
+                        <div style={{ position: "absolute", left: nwF + "%", top: 0, height: barH, width: (nwT - nwF) + "%", background: "#4db5be" }} />
+                        <div style={{ position: "absolute", left: nwT + "%", top: 0, height: barH, width: (nnT - nwT) + "%", background: "#eaecf0", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
+                        <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
                       </div>
                     );
                   }
@@ -337,44 +341,44 @@ function App() {
                   const totalPct = (r.b.t / maxBill) * 100;
                   return (
                     <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: barH }}>
-                      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f1f5f9", borderRadius: barH / 2 }} />
-                      <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: fixedPct + "%", background: "#93c5fd", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
-                      <div style={{ position: "absolute", left: fixedPct + "%", top: 0, height: barH, width: (totalPct - fixedPct) + "%", background: "#c4b5fd", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
-                      <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#94a3b8" }}>{r.pop}%</div>
+                      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
+                      <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: fixedPct + "%", background: "#d6bbfb", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
+                      <div style={{ position: "absolute", left: fixedPct + "%", top: 0, height: barH, width: (totalPct - fixedPct) + "%", background: "#4db5be", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
+                      <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
                     </div>
                   );
                 })()}
               </div>
 
               {open && (
-                <div style={{ margin: "4px 0 8px 50px", padding: "12px 14px", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}>
+                <div style={{ margin: "4px 0 8px 50px", padding: "12px 14px", background: "#fff", borderRadius: 8, border: "1px solid #eaecf0", fontSize: 12 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 10 }}>
-                    <div><span style={{ color: "#94a3b8" }}>Income:</span> <strong>${r.income}k</strong></div>
-                    <div><span style={{ color: "#94a3b8" }}>Wealth:</span> <strong>${r.wealth}k</strong></div>
-                    <div><span style={{ color: "#94a3b8" }}>Property:</span> <strong>{r.owner ? "$" + r.propVal + "k" : "Renter"}</strong></div>
-                    <div><span style={{ color: "#94a3b8" }}>Usage:</span> <strong>{r.usage.toLocaleString()} kWh/yr</strong></div>
-                    <div><span style={{ color: "#94a3b8" }}>Grid draw:</span> <strong>{Math.round(gridUsage(r)).toLocaleString()} kWh/yr</strong></div>
-                    <div><span style={{ color: "#94a3b8" }}>CER:</span> <strong>{r.battery ? "Solar+Battery" : r.solar ? "Solar only" : "None"}</strong></div>
+                    <div><span style={{ color: "#98a2b3" }}>Income:</span> <strong>${r.income}k</strong></div>
+                    <div><span style={{ color: "#98a2b3" }}>Wealth:</span> <strong>${r.wealth}k</strong></div>
+                    <div><span style={{ color: "#98a2b3" }}>Property:</span> <strong>{r.owner ? "$" + r.propVal + "k" : "Renter"}</strong></div>
+                    <div><span style={{ color: "#98a2b3" }}>Usage:</span> <strong>{r.usage.toLocaleString()} kWh/yr</strong></div>
+                    <div><span style={{ color: "#98a2b3" }}>Grid draw:</span> <strong>{Math.round(gridUsage(r)).toLocaleString()} kWh/yr</strong></div>
+                    <div><span style={{ color: "#98a2b3" }}>CER:</span> <strong>{r.battery ? "Solar+Battery" : r.solar ? "Solar only" : "None"}</strong></div>
                   </div>
-                  <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 10 }}>
+                  <div style={{ borderTop: "1px solid #f9fafb", paddingTop: 10 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       <div>
-                        <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>Today's baseline</div>
-                        <div><strong>${Math.round(r.b.t).toLocaleString()}/yr</strong> <span style={{ color: "#94a3b8" }}>network</span></div>
-                        <div style={{ color: "#94a3b8", fontSize: 11 }}>Fixed ${Math.round(r.b.f).toLocaleString()} {"\u00B7"} Usage ${Math.round(r.b.v).toLocaleString()}</div>
+                        <div style={{ color: "#98a2b3", fontSize: 11, marginBottom: 2 }}>Today's baseline</div>
+                        <div><strong>${Math.round(r.b.t).toLocaleString()}/yr</strong> <span style={{ color: "#98a2b3" }}>network</span></div>
+                        <div style={{ color: "#98a2b3", fontSize: 11 }}>Fixed ${Math.round(r.b.f).toLocaleString()} {"\u00B7"} Usage ${Math.round(r.b.v).toLocaleString()}</div>
                       </div>
                       <div>
-                        <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 2 }}>Your scenario</div>
-                        <div><strong>${Math.round(r.n.t).toLocaleString()}/yr</strong> <span style={{ color: "#94a3b8" }}>network</span></div>
-                        <div style={{ color: "#94a3b8", fontSize: 11 }}>
+                        <div style={{ color: "#98a2b3", fontSize: 11, marginBottom: 2 }}>Your scenario</div>
+                        <div><strong>${Math.round(r.n.t).toLocaleString()}/yr</strong> <span style={{ color: "#98a2b3" }}>network</span></div>
+                        <div style={{ color: "#98a2b3", fontSize: 11 }}>
                           Fixed ${Math.round(r.n.f).toLocaleString()} {"\u00B7"} Usage ${Math.round(r.n.v).toLocaleString()}
-                          {r.n.d !== 0 && <span style={{ color: r.n.d < 0 ? "#16a34a" : undefined }}> {"\u00B7"} Dyn {r.n.d < 0 ? "\u2212" : "+"}${Math.abs(Math.round(r.n.d)).toLocaleString()}</span>}
+                          {r.n.d !== 0 && <span style={{ color: r.n.d < 0 ? "#2ea871" : undefined }}> {"\u00B7"} Dyn {r.n.d < 0 ? "\u2212" : "+"}${Math.abs(Math.round(r.n.d)).toLocaleString()}</span>}
                         </div>
                       </div>
                     </div>
                     {fullBill && (
-                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
-                        <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>Non-network costs (same in both scenarios)</div>
+                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #f9fafb" }}>
+                        <div style={{ fontSize: 11, color: "#98a2b3", marginBottom: 4 }}>Non-network costs (same in both scenarios)</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4, fontSize: 11 }}>
                           <div>Wholesale <strong>${Math.round(r.nn.wholesale).toLocaleString()}</strong></div>
                           <div>Environmental <strong>${Math.round(r.nn.env).toLocaleString()}</strong></div>
@@ -395,21 +399,21 @@ function App() {
       </div>
 
       {isBaseline && (
-        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#64748b", flexWrap: "wrap" }}>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#93c5fd", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network fixed (30%)</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#c4b5fd", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network usage (70%)</span>
-          {fullBill && <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#e2e8f0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail</span>}
+        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#667085", flexWrap: "wrap" }}>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#d6bbfb", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network fixed (30%)</span>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#4db5be", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network usage (70%)</span>
+          {fullBill && <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#eaecf0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail</span>}
         </div>
       )}
       {!isBaseline && fullBill && (
-        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#64748b", flexWrap: "wrap" }}>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#e2e8f0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail (unchanged)</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#22c55e", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Saving</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#ef4444", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Increase</span>
+        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#667085", flexWrap: "wrap" }}>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#eaecf0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail (unchanged)</span>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#2ea871", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Saving</span>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#ff6464", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Increase</span>
         </div>
       )}
 
-      <div style={{ marginTop: 20, padding: "14px 16px", background: is31 && fp === 30 && dp === 0 && propScale === 0 ? "linear-gradient(135deg, #fef3c7, #fee2e2)" : "linear-gradient(135deg, #fef3c7, #fef9c3)", borderRadius: 10, border: "1px solid " + (is31 ? "#fca5a5" : "#fde68a") }}>
+      <div style={{ marginTop: 20, padding: "14px 16px", background: is31 && fp === 30 && dp === 0 && propScale === 0 ? "linear-gradient(135deg, #fffbe7, #ffcfcf)" : "linear-gradient(135deg, #fffbe7, #fffbe7)", borderRadius: 10, border: "1px solid " + (is31 ? "#ffa3a3" : "#fdefbd") }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: "#92400e" }}>
           {is31 && fp === 30 && dp === 0 && propScale === 0 ? "\u26A0\uFE0F The cost of doing nothing" : "Key takeaway"}
         </div>
@@ -430,16 +434,16 @@ function App() {
       </div>
 
       <button onClick={() => setShowAss(!showAss)}
-        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: showAss ? "#f1f5f9" : "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid #eaecf0", background: showAss ? "#f9fafb" : "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#344054", marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span>{"\u2699\uFE0F"} Model assumptions & detailed parameters</span>
-        <span style={{ fontSize: 11, color: "#94a3b8" }}>{showAss ? "Hide \u25B2" : "Show \u25BC"}</span>
+        <span style={{ fontSize: 11, color: "#98a2b3" }}>{showAss ? "Hide \u25B2" : "Show \u25BC"}</span>
       </button>
 
       {showAss && (
-        <div style={{ padding: 16, background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", marginTop: 8 }}>
-          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12, lineHeight: 1.5 }}>
+        <div style={{ padding: 16, background: "#f9fafb", borderRadius: 12, border: "1px solid #eaecf0", marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: "#667085", marginBottom: 12, lineHeight: 1.5 }}>
             Every number in this model is adjustable. Change any value to see how it shifts the outcomes.{" "}
-            <button onClick={() => { setP(DP); setHH(DHH); }} style={{ fontSize: 11, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Reset all to defaults</button>
+            <button onClick={() => { setP(DP); setHH(DHH); }} style={{ fontSize: 11, color: "#4a00c3", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Reset all to defaults</button>
           </div>
           <Section title="Grid costs" defaultOpen={true}>
             <Slider label="Average grid charge per household" help="AER 2025-26: ~$700 (Energex) to ~$1,043 (Endeavour). Includes transmission + distribution." value={P.pool} onChange={v => setParam("pool", v)} min={500} max={1500} step={10} unit="$/yr" />
@@ -455,10 +459,10 @@ function App() {
           </Section>
           <Section title="Dynamic pricing settings">
             <Slider label="Battery credit (% of dynamic pool)" help="How much flows back to battery owners as a peak-reduction reward." value={P.dynBatteryCredit} onChange={v => setParam("dynBatteryCredit", v)} min={0} max={80} step={5} unit="%" />
-            <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.4 }}>Everyone without a battery pays based on grid draw.</div>
+            <div style={{ fontSize: 10, color: "#98a2b3", lineHeight: 1.4 }}>Everyone without a battery pays based on grid draw.</div>
           </Section>
           <Section title="Non-network bill components">
-            <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.4, marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: "#98a2b3", lineHeight: 1.4, marginBottom: 8 }}>
               These costs are used in "full bill" view. They don't change between scenarios {"\u2014"} only network charges do. Wholesale, environmental, and variable retail scale with grid usage. Based on DMO 2025-26 data and ACCC cost stack analysis.
             </div>
             <Slider label="Wholesale (avg household)" help="~35% of the total bill. Fully volumetric — scales with grid draw." value={P.wholesalePerKwh} onChange={v => setParam("wholesalePerKwh", v)} min={400} max={1200} step={10} unit="$/yr" />
@@ -471,43 +475,43 @@ function App() {
             <Slider label="Neutral threshold" help="Bill changes smaller than this % of the average are shown as negligible." value={P.neutralThreshold} onChange={v => setParam("neutralThreshold", v)} min={1} max={15} step={1} unit="%" />
           </Section>
           <Section title="Household types">
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 11, color: "#667085", marginBottom: 8, lineHeight: 1.4 }}>
               Population shares should sum to 100%. Usage is total consumption before solar/battery offsets.
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                    <th style={{ textAlign: "left", padding: "4px 6px", color: "#64748b", fontWeight: 600 }}>Type</th>
-                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>kWh</th>
-                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Prop $k</th>
-                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Now%</th>
-                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>2031%</th>
-                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Sol</th>
-                    <th style={{ padding: "4px 4px", color: "#64748b", fontWeight: 600 }}>Bat</th>
+                  <tr style={{ borderBottom: "2px solid #eaecf0" }}>
+                    <th style={{ textAlign: "left", padding: "4px 6px", color: "#667085", fontWeight: 600 }}>Type</th>
+                    <th style={{ padding: "4px 4px", color: "#667085", fontWeight: 600 }}>kWh</th>
+                    <th style={{ padding: "4px 4px", color: "#667085", fontWeight: 600 }}>Prop $k</th>
+                    <th style={{ padding: "4px 4px", color: "#667085", fontWeight: 600 }}>Now%</th>
+                    <th style={{ padding: "4px 4px", color: "#667085", fontWeight: 600 }}>2031%</th>
+                    <th style={{ padding: "4px 4px", color: "#667085", fontWeight: 600 }}>Sol</th>
+                    <th style={{ padding: "4px 4px", color: "#667085", fontWeight: 600 }}>Bat</th>
                   </tr>
                 </thead>
                 <tbody>
                   {hh.map((h, i) => (
-                    <tr key={h.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <tr key={h.id} style={{ borderBottom: "1px solid #f9fafb" }}>
                       <td style={{ padding: "4px 6px", fontWeight: 500 }}>{h.icon} {h.name}</td>
-                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.usage} onChange={e => setHHF(i, "usage", +e.target.value)} style={{ width: 52, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
-                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.propVal} onChange={e => setHHF(i, "propVal", +e.target.value)} style={{ width: 52, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
-                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.popNow} onChange={e => setHHF(i, "popNow", +e.target.value)} style={{ width: 38, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
-                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.pop31} onChange={e => setHHF(i, "pop31", +e.target.value)} style={{ width: 38, fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.usage} onChange={e => setHHF(i, "usage", +e.target.value)} style={{ width: 52, fontSize: 11, border: "1px solid #eaecf0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.propVal} onChange={e => setHHF(i, "propVal", +e.target.value)} style={{ width: 52, fontSize: 11, border: "1px solid #eaecf0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.popNow} onChange={e => setHHF(i, "popNow", +e.target.value)} style={{ width: 38, fontSize: 11, border: "1px solid #eaecf0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
+                      <td style={{ padding: "2px 2px" }}><input type="number" value={h.pop31} onChange={e => setHHF(i, "pop31", +e.target.value)} style={{ width: 38, fontSize: 11, border: "1px solid #eaecf0", borderRadius: 4, padding: "2px 4px", textAlign: "right" }} /></td>
                       <td style={{ padding: "2px 4px", textAlign: "center" }}><input type="checkbox" checked={h.solar} onChange={e => setHHF(i, "solar", e.target.checked)} /></td>
                       <td style={{ padding: "2px 4px", textAlign: "center" }}><input type="checkbox" checked={h.battery} onChange={e => setHHF(i, "battery", e.target.checked)} /></td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ borderTop: "2px solid #e2e8f0" }}>
+                  <tr style={{ borderTop: "2px solid #eaecf0" }}>
                     <td style={{ padding: "4px 6px", fontWeight: 600, fontSize: 11 }}>Totals</td>
                     <td></td><td></td>
-                    <td style={{ padding: "4px 4px", fontWeight: 700, fontSize: 11, textAlign: "right", color: hh.reduce((s, h) => s + h.popNow, 0) === 100 ? "#16a34a" : "#dc2626" }}>
+                    <td style={{ padding: "4px 4px", fontWeight: 700, fontSize: 11, textAlign: "right", color: hh.reduce((s, h) => s + h.popNow, 0) === 100 ? "#2ea871" : "#ff6464" }}>
                       {hh.reduce((s, h) => s + h.popNow, 0)}%
                     </td>
-                    <td style={{ padding: "4px 4px", fontWeight: 700, fontSize: 11, textAlign: "right", color: hh.reduce((s, h) => s + h.pop31, 0) === 100 ? "#16a34a" : "#dc2626" }}>
+                    <td style={{ padding: "4px 4px", fontWeight: 700, fontSize: 11, textAlign: "right", color: hh.reduce((s, h) => s + h.pop31, 0) === 100 ? "#2ea871" : "#ff6464" }}>
                       {hh.reduce((s, h) => s + h.pop31, 0)}%
                     </td>
                     <td></td><td></td>
