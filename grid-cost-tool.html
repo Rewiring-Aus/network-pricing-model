@@ -190,6 +190,9 @@ function App() {
           <em>Important note:</em> This model has been built for illustrative purposes only to support discussion around the AEMC's Pricing Review consultation process. The figures, population distributions and savings displayed
           are for illustrative purposes and include multiple assumptions that may be changed based on additional data updates. We encourage discussion and refinement of this tool - contact us at electrify@rewiringaustralia.org.
         </p>
+        <p style={{ fontSize: 13, color: "#667085", margin: "8px 0 0", lineHeight: 1.5 }}>
+          Rewiring Australia has made a submission to the AEMC's pricing review {"\u2014"} <a href="https://rewiringaustralia.org/report/aemc-pricing-review-submission" target="_blank" rel="noopener noreferrer" style={{ color: "#4a00c3", fontWeight: 600 }}>read it here</a>.
+        </p>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, alignItems: "center" }}>
@@ -226,21 +229,6 @@ function App() {
       )}
 
       <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-          {[
-            { label: "Current pricing (30% Fixed Costs)", fp: 30, dp: 0, ps: 0, col: "#4a00c3", bg: "#f3ecff", border: "#eaecf0" },
-            { label: "Increase to 65% Fixed Costs", fp: 65, dp: 0, ps: 0, col: "#667085", bg: "#f9fafb", border: "#eaecf0" },
-            { label: "Rewiring\u2019s Proposal (50% Fixed Costs, 25% Dynamic Costs, Property Scaling)", fp: 50, dp: 25, ps: 100, col: "#2ea871", bg: "#ecfdf3", border: "#2ea871", icon: "\u{1F50B}" },
-          ].map(s => {
-            const active = fp === s.fp && dp === s.dp && propScale === s.ps;
-            return (
-              <button key={s.label} onClick={() => { setFp(s.fp); setDp(s.dp); setPropScale(s.ps); }}
-                style={{ padding: "6px 12px", borderRadius: 8, border: "2px solid", borderColor: active ? s.col : s.border, background: active ? s.bg : "#fff", fontWeight: active ? 600 : 400, fontSize: 12, cursor: "pointer", color: active ? s.col : "#101828" }}>
-                {s.icon ? s.icon + " " : ""}{s.label}
-              </button>
-            );
-          })}
-        </div>
         <div style={{ background: "#f9fafb", borderRadius: 12, border: "1px solid #eaecf0", padding: 14 }}>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             <Lever label="Fixed" value={fp} unit="%" help={"Currently ~30% of network revenue comes from a flat daily charge that\u2019s the same for every household. The AEMC wants to push this to ~65%+. A higher fixed share means everyone pays the same regardless of how much grid power they use \u2014 great for heavy users, bad for low-usage and solar households."}>
@@ -299,52 +287,30 @@ function App() {
                   </div>
                 </div>
 
-                {!isBaseline && (() => {
+                {(() => {
                   const mxB = maxBill * 1.1;
-                  const bPos = Math.min(Math.max(bT / mxB * 100, 2), 95);
-                  const nPos = Math.min(Math.max(nT / mxB * 100, 0), 100);
-                  const left = Math.min(bPos, nPos);
-                  const right = Math.max(bPos, nPos);
-                  const tH = barH + 12;
-                  const nnPos = fullBill ? Math.min(r.nn.total / mxB * 100, 95) : 0;
+                  const bill = isBaseline ? r.b : r.n;
+                  const billTotal = isBaseline ? r.b.t : r.n.t;
+                  const billFull = isBaseline ? r.bFull : r.nFull;
+                  const nwF = Math.min((bill.f / mxB) * 100, 100);
+                  const nwT = Math.min((billTotal / mxB) * 100, 100);
+                  const varW = Math.max(nwT - nwF, 0);
+                  const nnW = fullBill ? Math.max(Math.min(((billFull - billTotal) / mxB) * 100, 100 - nwT), 0) : 0;
+                  const hasEnd = !fullBill || nnW <= 0;
+                  const tH = !isBaseline ? barH + 12 : barH;
+                  const barTop = !isBaseline ? 12 : 0;
+                  const bPos = !isBaseline ? Math.min(Math.max(getBillT(r, "b") / mxB * 100, 2), 95) : 0;
                   return (
                     <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: tH }}>
-                      <div style={{ position: "absolute", left: 0, right: 0, top: 12, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
-                      {fullBill && nnPos > 0 && <div style={{ position: "absolute", left: 0, top: 12, height: barH, width: nnPos + "%", background: "#eaecf0", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
-                      <div style={{ position: "absolute", left: bPos + "%", top: 0, height: tH, display: "flex", flexDirection: "column", alignItems: "center", transform: "translateX(-50%)", zIndex: 2 }}>
-                        <div style={{ fontSize: 9, color: "#667085", fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>${Math.round(bT).toLocaleString()}</div>
+                      <div style={{ position: "absolute", left: 0, right: 0, top: barTop, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
+                      {nwF > 0 && <div style={{ position: "absolute", left: 0, top: barTop, height: barH, width: nwF + "%", background: "#d6bbfb", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
+                      {varW > 0 && <div style={{ position: "absolute", left: nwF + "%", top: barTop, height: barH, width: varW + "%", background: "#4db5be", borderRadius: hasEnd ? "0 " + barH / 2 + "px " + barH / 2 + "px 0" : "0" }} />}
+                      {fullBill && nnW > 0 && <div style={{ position: "absolute", left: nwT + "%", top: barTop, height: barH, width: nnW + "%", background: "#eaecf0", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />}
+                      {!isBaseline && <div style={{ position: "absolute", left: bPos + "%", top: 0, height: tH, display: "flex", flexDirection: "column", alignItems: "center", transform: "translateX(-50%)", zIndex: 2 }}>
+                        <div style={{ fontSize: 9, color: "#667085", fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>${Math.round(getBillT(r, "b")).toLocaleString()}</div>
                         <div style={{ width: 2, flex: 1, background: "#667085", borderRadius: 1, marginTop: 1 }} />
-                      </div>
-                      {!neutral && ch < 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #82ff7b, #2ea871)", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
-                      {!neutral && ch > 0 && <div style={{ position: "absolute", top: 12, height: barH, left: left + "%", width: (right - left) + "%", background: "linear-gradient(90deg, #ffa3a3, #ff6464)", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />}
-                      <div style={{ position: "absolute", right: -38, top: 12, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
-                    </div>
-                  );
-                })()}
-
-                {isBaseline && (() => {
-                  if (fullBill) {
-                    const nwF = (r.b.f / maxBill) * 100;
-                    const nwT = (r.b.t / maxBill) * 100;
-                    const nnT = (r.bFull / maxBill) * 100;
-                    return (
-                      <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: barH }}>
-                        <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
-                        <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: nwF + "%", background: "#d6bbfb", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
-                        <div style={{ position: "absolute", left: nwF + "%", top: 0, height: barH, width: (nwT - nwF) + "%", background: "#4db5be" }} />
-                        <div style={{ position: "absolute", left: nwT + "%", top: 0, height: barH, width: (nnT - nwT) + "%", background: "#eaecf0", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
-                        <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
-                      </div>
-                    );
-                  }
-                  const fixedPct = (r.b.f / maxBill) * 100;
-                  const totalPct = (r.b.t / maxBill) * 100;
-                  return (
-                    <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: barH }}>
-                      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
-                      <div style={{ position: "absolute", left: 0, top: 0, height: barH, width: fixedPct + "%", background: "#d6bbfb", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />
-                      <div style={{ position: "absolute", left: fixedPct + "%", top: 0, height: barH, width: (totalPct - fixedPct) + "%", background: "#4db5be", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />
-                      <div style={{ position: "absolute", right: -38, top: 0, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
+                      </div>}
+                      <div style={{ position: "absolute", right: -38, top: barTop, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
                     </div>
                   );
                 })()}
@@ -398,20 +364,12 @@ function App() {
         })}
       </div>
 
-      {isBaseline && (
-        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#667085", flexWrap: "wrap" }}>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#d6bbfb", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network fixed (30%)</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#4db5be", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network usage (70%)</span>
-          {fullBill && <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#eaecf0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail</span>}
-        </div>
-      )}
-      {!isBaseline && fullBill && (
-        <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#667085", flexWrap: "wrap" }}>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#eaecf0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail (unchanged)</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#2ea871", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Saving</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#ff6464", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Increase</span>
-        </div>
-      )}
+      <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#667085", flexWrap: "wrap" }}>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#d6bbfb", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network fixed ({fp}%)</span>
+          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#4db5be", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network variable ({varShare}%{dp > 0 ? " incl. dynamic" : ""})</span>
+          {fullBill && <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#eaecf0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail{!isBaseline ? " (unchanged)" : ""}</span>}
+          {!isBaseline && <span><span style={{ display: "inline-block", width: 2, height: 10, background: "#667085", borderRadius: 1, marginRight: 4, verticalAlign: "middle" }} />Baseline</span>}
+      </div>
 
       <div style={{ marginTop: 20, padding: "14px 16px", background: is31 && fp === 30 && dp === 0 && propScale === 0 ? "linear-gradient(135deg, #fffbe7, #ffcfcf)" : "linear-gradient(135deg, #fffbe7, #fffbe7)", borderRadius: 10, border: "1px solid " + (is31 ? "#ffa3a3" : "#fdefbd") }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: "#92400e" }}>
