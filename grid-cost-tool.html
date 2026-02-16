@@ -19,7 +19,7 @@ const { useState, useMemo, useCallback } = React;
 const DP = {
   pool: 950, numHH: 10.8, avgProp: 1.05, solarReduction: 55,
   batteryReduction: 88, renterFixedShare: 15, dynBatteryCredit: 30,
-  neutralThreshold: 5,
+
   retailFixed: 150, wholesalePerKwh: 770, envPerKwh: 155, retailVarPerKwh: 175,
   avgUsage: 5500,
 };
@@ -69,7 +69,7 @@ function Section({ title, children, defaultOpen }) {
 function Lever({ label, value, unit, help, children }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ flex: 1, minWidth: 160 }}>
+    <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: "#344054" }}>{label}</span>
         <span style={{ fontSize: 12, fontWeight: 700, color: "#101828" }}>{value}{unit}</span>
@@ -168,16 +168,15 @@ function App() {
   }, [hh, calcBill, nonNetworkCosts, baseline, current, pk]);
 
   const maxBill = Math.max(...rows.map(r => fullBill ? Math.max(r.bFull, r.nFull) : Math.max(r.b.t, r.n.t)));
-  const isNeutral = (ch) => Math.abs(ch) < pool * (P.neutralThreshold / 100);
-  const colFn = (ch) => isNeutral(ch) ? "#667085" : ch < 0 ? "#2ea871" : "#ff6464";
-  const pfxFn = (ch) => isNeutral(ch) ? "" : ch < 0 ? "\u2212" : "+";
+  const colFn = (ch) => ch === 0 ? "#667085" : ch < 0 ? "#2ea871" : "#ff6464";
+  const pfxFn = (ch) => ch === 0 ? "" : ch < 0 ? "\u2212" : "+";
 
   const getBillT = (r, which) => fullBill ? (which === "b" ? r.bFull : r.nFull) : (which === "b" ? r.b.t : r.n.t);
   const getCh = (r) => fullBill ? r.chFull : r.ch;
   const getCp = (r) => fullBill ? r.cpFull : r.cp;
 
   return (
-    <div style={{ fontFamily: "'PT Sans', sans-serif", maxWidth: 860, margin: "0 auto", padding: "20px 16px", color: "#101828" }}>
+    <div style={{ fontFamily: "'PT Sans', sans-serif", maxWidth: 1060, margin: "0 auto", padding: "20px 16px", color: "#101828" }}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px", fontFamily: "'Roboto', sans-serif" }}>Who pays for the grid?</h1>
         <p style={{ fontSize: 13, color: "#667085", margin: 0, lineHeight: 1.5 }}>
@@ -228,40 +227,41 @@ function App() {
         </div>
       )}
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ background: "#f9fafb", borderRadius: 12, border: "1px solid #eaecf0", padding: 14 }}>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            <Lever label="Fixed" value={fp} unit="%" help={"Currently ~30% of network revenue comes from a flat daily charge that\u2019s the same for every household. The AEMC wants to push this to ~65%+. A higher fixed share means everyone pays the same regardless of how much grid power they use \u2014 great for heavy users, bad for low-usage and solar households."}>
-              <input type="range" min={0} max={80} step={1} value={fp} onChange={e => setFp(+e.target.value)} style={{ width: "100%" }} />
-            </Lever>
-            <Lever label="Dynamic" value={dp} unit="%" help={"This slice of the bill rewards battery owners who help reduce peak demand (through VPPs or market-exposed plans). Battery households earn a credit; everyone else pays based on their grid draw. Without it, there\u2019s no financial incentive for the flexibility batteries can provide."}>
-              <input type="range" min={0} max={40} step={1} value={dp} onChange={e => setDp(+e.target.value)} style={{ width: "100%" }} />
-            </Lever>
-            <Lever label="Property scaling" value={propScale} unit="%" help={"Instead of a flat daily charge, scale it by property value \u2014 like council rates. At 0% everyone pays the same. At 100% your share is proportional to your home\u2019s value (vs the $" + P.avgProp.toFixed(2) + "M average). Expensive homes pay more; renters pay a reduced share (" + P.renterFixedShare + "%). This links what you pay to your capacity to pay."}>
-              <input type="range" min={0} max={100} step={5} value={propScale} onChange={e => setPropScale(+e.target.value)} style={{ width: "100%" }} />
-            </Lever>
-          </div>
-          <div style={{ fontSize: 11, color: "#667085", marginTop: 8, textAlign: "center" }}>
-            Usage-based: {varShare}%{dp > 0 ? " \u00B7 Dynamic rewards batteries for cutting peaks" : ""}
+      <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+        <div style={{ width: 250, flexShrink: 0, position: "sticky", top: 16, alignSelf: "flex-start" }}>
+          <div style={{ background: "#f9fafb", borderRadius: 12, border: "1px solid #eaecf0", padding: 14 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Lever label="Fixed" value={fp} unit="%" help={"Currently ~30% of network revenue comes from a flat daily charge that\u2019s the same for every household. The AEMC wants to push this to ~65%+. A higher fixed share means everyone pays the same regardless of how much grid power they use \u2014 great for heavy users, bad for low-usage and solar households."}>
+                <input type="range" min={0} max={80} step={1} value={fp} onChange={e => setFp(+e.target.value)} style={{ width: "100%" }} />
+              </Lever>
+              <Lever label="Dynamic" value={dp} unit="%" help={"This slice of the bill rewards battery owners who help reduce peak demand (through VPPs or market-exposed plans). Battery households earn a credit; everyone else pays based on their grid draw. Without it, there\u2019s no financial incentive for the flexibility batteries can provide."}>
+                <input type="range" min={0} max={40} step={1} value={dp} onChange={e => setDp(+e.target.value)} style={{ width: "100%" }} />
+              </Lever>
+              <Lever label="Property scaling" value={propScale} unit="%" help={"Instead of a flat daily charge, scale it by property value \u2014 like council rates. At 0% everyone pays the same. At 100% your share is proportional to your home\u2019s value (vs the $" + P.avgProp.toFixed(2) + "M average). Expensive homes pay more; renters pay a reduced share (" + P.renterFixedShare + "%). This links what you pay to your capacity to pay."}>
+                <input type="range" min={0} max={100} step={5} value={propScale} onChange={e => setPropScale(+e.target.value)} style={{ width: "100%" }} />
+              </Lever>
+            </div>
+            <div style={{ fontSize: 11, color: "#667085", marginTop: 10, textAlign: "center" }}>
+              Usage-based: {varShare}%{dp > 0 ? " \u00B7 Dynamic rewards batteries for cutting peaks" : ""}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, fontFamily: "'Roboto', sans-serif" }}>
-          {isBaseline ? ("What each household type pays today" + (fullBill ? "" : " (network only)")) : ("How bills change" + (fullBill ? " (full bill)" : " (network only)"))}
-        </h2>
-        {!isBaseline && <span style={{ fontSize: 11, color: "#98a2b3" }}>Bar thickness = population share</span>}
-      </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, fontFamily: "'Roboto', sans-serif" }}>
+              {isBaseline ? ("What each household type pays today" + (fullBill ? "" : " (network only)")) : ("How bills change" + (fullBill ? " (full bill)" : " (network only)"))}
+            </h2>
+            <span style={{ fontSize: 11, color: "#98a2b3" }}>Bar thickness = population share</span>
+          </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        {rows.map(r => {
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {rows.map(r => {
           const open = exp === r.id;
           const barH = Math.max(6, Math.round(r.pop / 18 * 28));
           const ch = getCh(r);
           const cp = getCp(r);
           const c = colFn(ch);
-          const neutral = isNeutral(ch);
           const bT = getBillT(r, "b");
           const nT = getBillT(r, "n");
           return (
@@ -279,10 +279,7 @@ function App() {
                     {isBaseline ? (
                       <div style={{ fontSize: 15, fontWeight: 700 }}>${Math.round(bT).toLocaleString()}<span style={{ fontSize: 11, fontWeight: 400, color: "#98a2b3" }}>/yr</span></div>
                     ) : (
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: c }}>{neutral ? "~$0" : pfxFn(ch) + "$" + Math.abs(Math.round(ch)).toLocaleString()}</div>
-                        <div style={{ fontSize: 11, color: c }}>{neutral ? "negligible" : (cp > 0.5 ? "+" : "") + Math.round(cp) + "%"}</div>
-                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: c }}><span style={{ fontSize: 11, fontWeight: 500 }}>{(cp > 0.5 ? "+" : "") + Math.round(cp) + "%"}</span> {pfxFn(ch) + "$" + Math.abs(Math.round(ch)).toLocaleString()}</div>
                     )}
                   </div>
                 </div>
@@ -297,19 +294,19 @@ function App() {
                   const varW = Math.max(nwT - nwF, 0);
                   const nnW = fullBill ? Math.max(Math.min(((billFull - billTotal) / mxB) * 100, 100 - nwT), 0) : 0;
                   const hasEnd = !fullBill || nnW <= 0;
-                  const tH = !isBaseline ? barH + 12 : barH;
-                  const barTop = !isBaseline ? 12 : 0;
-                  const bPos = !isBaseline ? Math.min(Math.max(getBillT(r, "b") / mxB * 100, 2), 95) : 0;
+                  const tH = barH + 8;
+                  const barTop = 8;
+                  const bPos = Math.min(Math.max(getBillT(r, "b") / mxB * 100, 2), 95);
                   return (
                     <div style={{ marginTop: 6, marginLeft: 38, marginRight: 40, position: "relative", height: tH }}>
                       <div style={{ position: "absolute", left: 0, right: 0, top: barTop, height: barH, background: "#f9fafb", borderRadius: barH / 2 }} />
                       {nwF > 0 && <div style={{ position: "absolute", left: 0, top: barTop, height: barH, width: nwF + "%", background: "#d6bbfb", borderRadius: barH / 2 + "px 0 0 " + barH / 2 + "px" }} />}
                       {varW > 0 && <div style={{ position: "absolute", left: nwF + "%", top: barTop, height: barH, width: varW + "%", background: "#4db5be", borderRadius: hasEnd ? "0 " + barH / 2 + "px " + barH / 2 + "px 0" : "0" }} />}
                       {fullBill && nnW > 0 && <div style={{ position: "absolute", left: nwT + "%", top: barTop, height: barH, width: nnW + "%", background: "#eaecf0", borderRadius: "0 " + barH / 2 + "px " + barH / 2 + "px 0" }} />}
-                      {!isBaseline && <div style={{ position: "absolute", left: bPos + "%", top: 0, height: tH, display: "flex", flexDirection: "column", alignItems: "center", transform: "translateX(-50%)", zIndex: 2 }}>
-                        <div style={{ fontSize: 9, color: "#667085", fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>${Math.round(getBillT(r, "b")).toLocaleString()}</div>
-                        <div style={{ width: 2, flex: 1, background: "#667085", borderRadius: 1, marginTop: 1 }} />
-                      </div>}
+                      <div style={{ position: "absolute", left: bPos + "%", top: 0, height: tH, display: "flex", flexDirection: "column", alignItems: "center", transform: "translateX(-50%)", zIndex: 2 }}>
+                        <div style={{ fontSize: 8, color: "#667085", fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>${Math.round(getBillT(r, "b")).toLocaleString()}</div>
+                        <div style={{ width: 1.5, flex: 1, background: "#667085", borderRadius: 1, marginTop: 1 }} />
+                      </div>
                       <div style={{ position: "absolute", right: -38, top: barTop, height: barH, display: "flex", alignItems: "center", fontSize: 9, color: "#98a2b3" }}>{r.pop}%</div>
                     </div>
                   );
@@ -364,11 +361,13 @@ function App() {
         })}
       </div>
 
-      <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#667085", flexWrap: "wrap" }}>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#d6bbfb", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network fixed ({fp}%)</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#4db5be", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network variable ({varShare}%{dp > 0 ? " incl. dynamic" : ""})</span>
-          {fullBill && <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#eaecf0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail{!isBaseline ? " (unchanged)" : ""}</span>}
-          {!isBaseline && <span><span style={{ display: "inline-block", width: 2, height: 10, background: "#667085", borderRadius: 1, marginRight: 4, verticalAlign: "middle" }} />Baseline</span>}
+          <div style={{ display: "flex", gap: 16, marginTop: 12, marginLeft: 50, fontSize: 11, color: "#667085", flexWrap: "wrap" }}>
+            <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#d6bbfb", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network fixed ({fp}%)</span>
+            <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#4db5be", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Network variable ({varShare}%{dp > 0 ? " incl. dynamic" : ""})</span>
+            {fullBill && <span><span style={{ display: "inline-block", width: 10, height: 10, background: "#eaecf0", borderRadius: 2, marginRight: 4, verticalAlign: "middle" }} />Wholesale, env, retail{!isBaseline ? " (unchanged)" : ""}</span>}
+            {!isBaseline && <span><span style={{ display: "inline-block", width: 2, height: 10, background: "#667085", borderRadius: 1, marginRight: 4, verticalAlign: "middle" }} />Baseline</span>}
+          </div>
+        </div>
       </div>
 
       <div style={{ marginTop: 20, padding: "14px 16px", background: is31 && fp === 30 && dp === 0 && propScale === 0 ? "linear-gradient(135deg, #fffbe7, #ffcfcf)" : "linear-gradient(135deg, #fffbe7, #fffbe7)", borderRadius: 10, border: "1px solid " + (is31 ? "#ffa3a3" : "#fdefbd") }}>
@@ -429,10 +428,7 @@ function App() {
             <Slider label="Retail fixed (daily supply charge)" help="Retailer's fixed daily charge component. Same for all households." value={P.retailFixed} onChange={v => setParam("retailFixed", v)} min={50} max={400} step={5} unit="$/yr" />
             <Slider label="Average household usage" help="Used as the reference point for scaling volumetric non-network costs." value={P.avgUsage} onChange={v => setParam("avgUsage", v)} min={3000} max={8000} step={100} unit=" kWh" />
           </Section>
-          <Section title="Display settings">
-            <Slider label="Neutral threshold" help="Bill changes smaller than this % of the average are shown as negligible." value={P.neutralThreshold} onChange={v => setParam("neutralThreshold", v)} min={1} max={15} step={1} unit="%" />
-          </Section>
-          <Section title="Household types">
+<Section title="Household types">
             <div style={{ fontSize: 11, color: "#667085", marginBottom: 8, lineHeight: 1.4 }}>
               Population shares should sum to 100%. Usage is total consumption before solar/battery offsets.
             </div>
